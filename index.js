@@ -30,7 +30,15 @@ var handleRequest = function(request, response, domain) {
     var mappedUrl = url == '/' ? mappedDomain : config.googleSites+url;
 
     https.get(mappedUrl, function(sitesResponse) {
-        sitesResponse.pipe(response);
+		var data = "";
+		sitesResponse.on('data', function (chunk) {
+            data += chunk;
+		});
+		sitesResponse.on('end', function () {
+			data = data.replace("<footer", "<footer style='display:none;' ");
+			response.end(data);
+		});
+
     });
 };
 
