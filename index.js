@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({
 
 var connection = null;
 
-app.set('port', process.env.port || 8000);
+app.set('port', process.env.port || 80);
 
 
 var handleRequest = function(request, response, domain) {
@@ -36,6 +36,15 @@ var handleRequest = function(request, response, domain) {
 		});
 		sitesResponse.on('end', function () {
 			data = data.replace("<footer", "<footer style='display:none;' ");
+			data = data.replace("//ssl.gstatic.com/atari/images/favicon_2.ico", 
+			"http://english.magik.vn/htdocs/magik.vn_cdn/fav.png");
+			data = data.replace("https://www.gstatic.com/images/branding/product/1x/atari_512dp.png", 
+			"http://english.magik.vn/htdocs/magik.vn_cdn/magik_heroes.jpg");
+			
+			data = data.replace("<meta itemprop=\"url\" property=\"og:url\" content=\"https://sites.google.com/magik.vn/magik-2017\" />",
+			"<meta itemprop=\"url\" property=\"og:url\" content=\"http://www.magik.vn\" />"
+			);
+			
 			response.end(data);
 		});
 
