@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({
 
 var connection = null;
 
-app.set('port', process.env.port || 80);
+app.set('port', process.env.port || config.port);
 
 
 var handleRequest = function(request, response, domain) {
@@ -98,7 +98,27 @@ app.post("/add/user", function(request, response) {
 
 app.all('*', function(request, response) {
    var domain = (request.headers.host.split(':')[0]).replace('www.','');
-   if (!cache.get(domain)) {
+   
+   var cacheValid = false;
+   
+   if (cache.get(domain)){
+	   dataCached = cache.get(domain);
+	   current_time = new Date().getTime();
+	   if (current_time - dataCached['cache_time'] < config.cache_duration) //cache chua qua 10 giay.
+	   {
+		   
+		   cacheValid = true;
+		   console.log(">>LOAD CACHE " + domain + " " + (current_time - dataCached['cache_time']));
+	   } else {
+		   console.log(">>EXPIRE CACHE. RELOAD" + domain);
+			
+	   }
+    } else {
+		console.log(">>LOAD DB TO CACHE " + domain);
+	}
+	
+   
+   if (false === cacheValid) {
        console.log("***Making DB Request **");
        var query = 'SELECT * from users where domain=":domain" or domain="www.:domain"'.replace(/:domain/g, domain);
        console.log(query);
@@ -107,7 +127,8 @@ app.all('*', function(request, response) {
            {
                if (!_.isEmpty(rows)) {
                    var dbResult = _.head(rows);
-				   console.log(JSON.stringify(dbResult));
+				   dbResult['cache_time'] = new Date().getTime();
+   				   console.log(JSON.stringify(dbResult));
                    cache.put(dbResult.domain, dbResult);
                    handleRequest(request, response, domain);
                } else {
