@@ -21,7 +21,13 @@ app.set('port', process.env.port || 80);
 
 
 var handleRequest = function(request, response, domain) {
-    var userSite = cache.get(domain),
+	
+	var domainInfo = cache.get(domain);
+	if (domainInfo == null){
+		response.end("");
+		return;
+	}
+    var userSite = domainInfo.site;
         mappedDomain = config.googleSitesRoot + userSite,
         url = request.url;
 
@@ -35,16 +41,29 @@ var handleRequest = function(request, response, domain) {
             data += chunk;
 		});
 		sitesResponse.on('end', function () {
+			//Hide Google Footer.
 			data = data.replace("<footer", "<footer style='display:none;' ");
-			data = data.replace("//ssl.gstatic.com/atari/images/favicon_2.ico", 
-			"http://english.magik.vn/htdocs/magik.vn_cdn/fav.png");
-			data = data.replace("https://www.gstatic.com/images/branding/product/1x/atari_512dp.png", 
-			"http://english.magik.vn/htdocs/magik.vn_cdn/magik_heroes.jpg");
 			
-			data = data.replace("<meta itemprop=\"url\" property=\"og:url\" content=\"https://sites.google.com/magik.vn/magik-2017\" />",
-			"<meta itemprop=\"url\" property=\"og:url\" content=\"http://www.magik.vn\" />"
-			);
+			//Change fav_icon
+			//<link rel="icon" href="//ssl.gstatic.com/atari/images/favicon_2.ico" />
+			regex = /<link rel="icon"[^>]*>/g
+			new_html = "<link rel=\"icon\" href=\"" + domainInfo.fav_icon + "\" />";
+			data = data.replace(regex, new_html)
 			
+			//Change og_url
+			//<meta itemprop="url" property="og:url" content="https://sites.google.com/magik.vn/skyx" />
+			regex = /<meta itemprop="url" property="og:url" [^>]*>/
+			new_html = "";
+			//"<meta itemprop=\"url\" property=\"og:url\" content=\"" + request.url + "\" />"; 
+			data = data.replace(regex, new_html)
+			
+			//Change og_image
+			//<meta itemprop="image" property="og:image" content="http://english.magik.vn/htdocs/magik.vn_cdn/magik_heroes.jpg" />
+			regex = /<meta itemprop="image" property="og:image"[^>]*>/
+			new_html = "<meta itemprop=\"image\" property=\"og:image\" content=\"" + domainInfo.og_image + "\" />"
+				+ "<meta property=\"og:description\" content=\"" + domainInfo.og_desc + "\"/>";
+			data = data.replace(regex, new_html)
+
 			response.end(data);
 		});
 
@@ -88,7 +107,8 @@ app.all('*', function(request, response) {
            {
                if (!_.isEmpty(rows)) {
                    var dbResult = _.head(rows);
-                   cache.put(dbResult.domain, dbResult.site);
+				   console.log(JSON.stringify(dbResult));
+                   cache.put(dbResult.domain, dbResult);
                    handleRequest(request, response, domain);
                } else {
                     response.send('Your site is not registered with us. Contact :supportEmail'.replace(':supportEmail', config.support.email));
@@ -100,7 +120,7 @@ app.all('*', function(request, response) {
            }
        });
    } else {
-       console.log("** Not Making DB Request **");
+       console.log("** Not Making DB Request **");	   
        handleRequest(request, response, domain);
    }
 });
