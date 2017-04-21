@@ -5,17 +5,19 @@
 
 var configObj = {
     googleSites: "https://sites.google.com",
-    googleSitesRoot: "https://sites.google.com/view/",
+    googleSitesRoot: "https://sites.google.com/magik.vn/",
+	port:8080,
+	cache_duration: 60000,
     db: {
         host     : 'localhost',
         user     : 'root',
-        password : 'password',
+        password : '',
         database : 'googlesites'
     },
     support: {
-        email: 'support@digitallake.asia'
+        email: 'diepnh@magik.vn'
     }
 };
-
+ 
 
 module.exports = configObj;
